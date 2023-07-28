@@ -5,6 +5,7 @@ __pycache__/
 
 
 music/
+music-collection-app/.env.local
 
 # C extensions
 *.so

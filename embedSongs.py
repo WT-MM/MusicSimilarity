@@ -2,17 +2,14 @@ import librosa
 import torch
 from transformers import EncodecModel, AutoProcessor
 import numpy as np
+from glob import glob
+from tqdm import tqdm
+
 
 model = EncodecModel.from_pretrained("facebook/encodec_32khz")
 processor = AutoProcessor.from_pretrained("facebook/encodec_32khz")
 
-y, sr = librosa.load('/content/sam.mp4', sr=32000) # Ensure the sample rate is 32 kHz
-x, _ = librosa.load('/content/musicgen_out.wav', sr=32000)
-
-pad = lambda a,i : a[0:i] if len(a) > i else a + [0] * (i-len(a))
-
-print(len(x))
-print(len(y))
+sample_rate = 32000
 
 def pad_array(array, length, pad_value=0):
     current_length = len(array)
@@ -26,25 +23,33 @@ def pad_array(array, length, pad_value=0):
     
     return padded_array
 
-if(len(x) > len(y)):
-  y = pad_array(y, len(x))
-else:
-  x = pad_array(x, len(y))
+def trim_array(array, length):
+    current_length = len(array)
+    
+    if current_length <= length:
+        return array
+    
+    return array[:length]
 
-inputs = processor(raw_audio=y, sampling_rate=processor.sampling_rate, return_tensors="pt")
-otherInputs = processor(raw_audio=x, sampling_rate=processor.sampling_rate, return_tensors="pt")
+embeddings = []
 
-'''
-encoder_outputs = model.encode(inputs["input_values"], inputs["padding_mask"])['audio_codes'].float()
-otherOut = model.encode(otherInputs["input_values"], otherInputs["padding_mask"])['audio_codes'].float()
+files = glob("./music/*.mp3")
 
-'''
+for i in tqdm(range(len(files))):
+  file = files[i]
+  y, _ = librosa.load(file, sr=sample_rate) # Ensure the sample rate is 32 kHz
+  y = trim_array(pad_array(y, sample_rate*60*5), sample_rate*60*5)
 
-with torch.no_grad():
-    one = model.encode(inputs['input_values'])['audio_codes']
-    encoder_outputs = torch.flatten(torch.cat([encoded[0] for encoded in one], dim=-1))
+  inputs = processor(raw_audio=y, sampling_rate=processor.sampling_rate, return_tensors="pt")
+  with torch.no_grad():
+    tem = model.encode(inputs['input_values'])['audio_codes']
+    encoder_outputs = torch.flatten(torch.cat([encoded[0] for encoded in tem], dim=-1))
+    #torch.save(encoder_outputs, file.replace(".mp4", ".pt"))
+    embeddings.append(encoder_outputs)
 
-    two = model.encode(otherInputs['input_values'])['audio_codes']
-    otherOut = torch.flatten(torch.cat([encoded[0] for encoded in two], dim=-1))
+embeddings = torch.stack(embeddings)
+torch.save(embeddings, "embeddings.pt")
 
-print(otherOut.size())
+
+
+    

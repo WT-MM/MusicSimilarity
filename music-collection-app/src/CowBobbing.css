@@ -1,0 +1,17 @@
+.cow.bobbing {
+  animation: bob 6s ease-in-out infinite;
+}
+
+.cow{
+  /*scale:4;*/
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-55px);
+  }
+}
