@@ -1,3 +1,4 @@
+import os
 import librosa
 import torch
 from transformers import EncodecModel, AutoProcessor
@@ -37,6 +38,9 @@ files = glob("./music/*.mp3")
 
 for i in tqdm(range(len(files))):
   file = files[i]
+  print("./embeddings"+file.replace(".mp3", ".pt")[1:])
+  if(os.path.exists("./embeddings"+file.replace(".mp3", ".pt")[1:])):
+    continue
   y, _ = librosa.load(file, sr=sample_rate) # Ensure the sample rate is 32 kHz
   y = trim_array(pad_array(y, sample_rate*60*5), sample_rate*60*5)
 
@@ -44,11 +48,11 @@ for i in tqdm(range(len(files))):
   with torch.no_grad():
     tem = model.encode(inputs['input_values'])['audio_codes']
     encoder_outputs = torch.flatten(torch.cat([encoded[0] for encoded in tem], dim=-1))
-    #torch.save(encoder_outputs, file.replace(".mp4", ".pt"))
-    embeddings.append(encoder_outputs)
+    torch.save(encoder_outputs, "./embeddings"+file.replace(".mp3", ".pt")[1:])
+    #embeddings.append(encoder_outputs)
 
-embeddings = torch.stack(embeddings)
-torch.save(embeddings, "embeddings.pt")
+#embeddings = torch.stack(embeddings)
+#torch.save(embeddings, "embeddings.pt")
 
 
 
