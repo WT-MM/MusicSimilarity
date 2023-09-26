@@ -6,11 +6,18 @@ import numpy as np
 from glob import glob
 from tqdm import tqdm
 
-
+'''
 model = EncodecModel.from_pretrained("facebook/encodec_32khz")
 processor = AutoProcessor.from_pretrained("facebook/encodec_32khz")
-
 sample_rate = 32000
+'''
+
+model = EncodecModel.from_pretrained("facebook/encodec_48khz")
+processor = AutoProcessor.from_pretrained("facebook/encodec_48khz")
+sample_rate = 48000
+
+
+
 
 def pad_array(array, length, pad_value=0):
     current_length = len(array)
